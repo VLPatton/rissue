@@ -1,0 +1,8 @@
+<div id="create-comment-div">
+    <button hx-post="/new/comment" hx-trigger="click" hx-target="#create-comment-div" hx-swap="innerHTML" hx-include=".post-comment">
+        Post comment
+    </button>
+    Email: <input type="email" class="post-comment" name="email" />
+    <br>
+    Comment: <input type="text" class="post-comment" name="comment" />
+</div>

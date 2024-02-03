@@ -8,10 +8,15 @@
 
     <body>
         <div id="create-div">
-            <button hx-post="/new/issue" hx-trigger="click" hx-target="#create-div" hx-swap="innerHTML">
+            <button hx-post="/new/issue" hx-trigger="click" hx-target="#create-div" hx-swap="innerHTML" hx-include=".create-issue">
                 Create new issue!
             </button>
+            Title: <input type="text" class="create-issue" name="title" />
+            <br>
+            Email: <input type="email" class="create-issue" name="email" />
+            <br>
+            Comment: <input type="text" class="create-issue" name="comment" />
         </div>
-        <div id="latest-div"></div>
+        <div id="latest-div">{}</div>
     </body>
 </html>
