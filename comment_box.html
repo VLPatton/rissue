@@ -1,8 +1,15 @@
-<div id="create-comment-div">
-    <button hx-post="/new/comment" hx-trigger="click" hx-target="#create-comment-div" hx-swap="innerHTML" hx-include=".post-comment">
+<div id="create-comment-div" class="create-tainer">
+    <span class="create-input-1r">
+    <button hx-post="/new/comment" hx-trigger="click" hx-target="#create-comment-div" hx-swap="innerHTML" hx-include=".post-comment" class="create-button">
         Post comment
     </button>
-    Email: <input type="email" class="post-comment" name="email" />
+    </span>
     <br>
-    Comment: <input type="text" class="post-comment" name="comment" />
+    <span class="create-input-1l">Email: <input type="email" class="post-comment" name="email" /></span>
+    <br>
+    <span class="create-input-3">
+    Comment:
+    <br>
+    <textarea class="post-comment comment" name="comment"></textarea>
+    </span>
 </div>
