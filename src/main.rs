@@ -18,9 +18,18 @@ struct CreateIssueRequest {
 impl CreateIssueRequest {
     pub fn validate(self) -> Option<CreateIssueRequest> {
         if let Ok(_) = jsonwebtoken::decode::<auth::AuthPayload>(&self.jwt, auth::decode_key(), &Validation::default()) {
+            let title = self.title
+                .replace("&", "&amp;")
+                .replace("<", "&lt;")
+                .replace(">", "&gt;");
+            let comment = self.comment
+                .replace("&", "&amp;")
+                .replace("<", "&lt;")
+                .replace(">", "&gt;");
+
             Some(CreateIssueRequest {
-                title: self.title,
-                comment: self.comment,
+                title,
+                comment,
                 jwt: self.jwt
             })
         } else {
@@ -39,9 +48,14 @@ struct CreateCommentRequest {
 impl CreateCommentRequest {
     pub fn validate(self) -> Option<CreateCommentRequest> {
         if let Ok(_) = jsonwebtoken::decode::<auth::AuthPayload>(&self.jwt, auth::decode_key(), &Validation::default()) {
+            let comment = self.comment
+                .replace("&", "&amp;")
+                .replace("<", "&lt;")
+                .replace(">", "&gt;");
+
             Some(CreateCommentRequest {
                 issue_id: self.issue_id,
-                comment: self.comment,
+                comment,
                 jwt: self.jwt
             })
         } else {
@@ -167,17 +181,15 @@ async fn new_comment(web::Form(body): web::Form<CreateCommentRequest>) -> impl R
         user_id.claims.sub
     ).execute(conn).await.unwrap();
 
-    let mut html = String::new();
+    let html = fs::read_to_string("comment_single.html").unwrap();
 
-    let data = sqlx::query!("SELECT * FROM commenttab WHERE comment_id=?", cid).fetch_all(conn).await.unwrap();
+    let comment = sqlx::query!("SELECT * FROM commenttab WHERE comment_id=?", cid).fetch_one(conn).await.unwrap();
 
-    for comment in data {
-        html.push_str(&std::format!("<div class=\"issue-comment\" id=\"id-{}\">", comment.issue_id));
-        html.push_str(&std::format!("{}<br>", comment.content));
-
-        html.push_str(&std::format!("(Submitted by: {} at {})<br><br>", comment.submitter, comment.post_date.and_utc()));
-        html.push_str("</div>\n");
-    }
+    let mut html = html
+        .replace("{comment_id}", &cid.to_string())
+        .replace("{content}", &comment.content)
+        .replace("{submitter}", &comment.submitter)
+        .replace("{post_date}", &comment.post_date.and_utc().to_string());
 
 
     let redo_comment = fs::read_to_string("comment_box.html").unwrap();

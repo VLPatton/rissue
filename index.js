@@ -23,7 +23,7 @@ function getCookie(cname) {
 
 function fetchNewToken() {
     const req = new XMLHttpRequest();
-    req.open("POST", "/auth/new_tok", false);
+    req.open("POST", "/auth/new_tok");
 
     req.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
 
@@ -32,9 +32,11 @@ function fetchNewToken() {
 
     console.log(b64);
 
-    req.send("user=" + document.getElementById("user-field").value + "&passwd=" + fixed);
+    req.addEventListener("loadend", (e) => {
+        setCookie("user_jwt", req.responseText, 30);
+    });
 
-    setCookie("user_jwt", req.responseText, 30);
+    req.send("user=" + document.getElementById("user-field").value + "&passwd=" + fixed);
 }
 
 document.body.addEventListener("htmx:beforeSend", function(evt) {
