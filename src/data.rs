@@ -1,29 +1,77 @@
-use std::sync::{Mutex, OnceLock};
+use std::sync::OnceLock;
+use sqlx::sqlite::SqlitePool;
 
-use sqlite::Connection;
+static DB_POOL: OnceLock<SqlitePool> = OnceLock::new();
 
-pub const CREATE_ISSUETAB: &'static str = r#"CREATE TABLE IF NOT EXISTS issuetab (
-    issue_id INTEGER PRIMARY KEY,
-    title TEXT NOT NULL,
-    submitter TEXT NOT NULL,
-    post_date DATETIME NOT NULL
-);"#;
-pub const CREATE_COMMENTTAB: &'static str = r#"CREATE TABLE IF NOT EXISTS commenttab (
-    comment_id INTEGER PRIMARY KEY,
-    issue_id INTEGER,
-    content TEXT NOT NULL,
-    submitter TEXT NOT NULL,
-    post_date DATETIME NOT NULL,
-    FOREIGN KEY(issue_id) REFERENCES issuetab(issue_id)
-);"#;
-
-pub fn get_connection() -> &'static Mutex<Connection> {
-    static CONNECTION: OnceLock<Mutex<Connection>> = OnceLock::new();
-    CONNECTION.get_or_init(|| Mutex::new(Connection::open("rissue.db").expect("couldn't open db connection")))
+pub fn get_connection() -> &'static SqlitePool {
+    DB_POOL.get().unwrap()
 }
 
-pub fn init_db_unchecked() {
-    let conn = get_connection().lock().unwrap();
-    conn.execute(CREATE_ISSUETAB).unwrap();
-    conn.execute(CREATE_COMMENTTAB).unwrap();
+pub fn init_connection(pool: SqlitePool) {
+    DB_POOL.get_or_init(move || pool);
 }
+
+#[derive(Debug, PartialEq, Eq)]
+pub struct IssueStatus {
+    stat: i32
+}
+
+impl IssueStatus {
+    pub fn as_str(&self) -> &str {
+        STATUS_NAMES[self.stat as usize]
+    }
+
+    pub fn as_class_str(&self) -> &str {
+        STATUS_CLASS_NAMES[self.stat as usize]
+    }
+
+    pub fn get_raw(&self) -> i32 {
+        self.stat
+    }
+
+    pub fn new(stat: i32) -> Option<IssueStatus> {
+        if (stat as usize) < STATUS_NAMES.len() {
+            Some(IssueStatus { stat })
+        } else {
+            None
+        }
+    }
+
+    pub fn unresolved() -> IssueStatus {
+        IssueStatus {
+            stat: 0
+        }
+    }
+
+    pub fn wip() -> IssueStatus {
+        IssueStatus {
+            stat: 1
+        }
+    }
+
+    pub fn wont_resolve() -> IssueStatus {
+        IssueStatus {
+            stat: 2
+        }
+    }
+
+    pub fn resolved() -> IssueStatus {
+        IssueStatus {
+            stat: 3
+        }
+    }
+}
+
+pub const STATUS_NAMES: &'static [&'static str] = &[
+    "Unresolved",
+    "Work In Progress",
+    "Won't Resolve",
+    "Resolved"
+];
+
+pub const STATUS_CLASS_NAMES: &'static [&'static str] = &[
+    "issue-unres",
+    "issue-wip",
+    "issue-wont",
+    "issue-res"
+];
